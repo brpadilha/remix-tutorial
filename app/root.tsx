@@ -1,12 +1,14 @@
 import {
   Form,
   Links,
-  Link,
   Meta,
   Scripts,
   ScrollRestoration,
   Outlet,
   useLoaderData,
+  redirect,
+  NavLink,
+  useNavigation,
 } from "@remix-run/react";
 
 import { json } from "@remix-run/node";
@@ -29,13 +31,16 @@ export const loader = async () => {
 
 export const action = async () => {
   const contact = await createEmptyContact()
-  return json({contact})
+  
+  return redirect(`/contacts/${contact.id}/edit`);
 }
 
 export default function App() {
   const { contacts } = useLoaderData<typeof loader>();
 
-  return (
+  const navigation = useNavigation()
+  console.log(navigation.state)
+  return (  
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
@@ -66,8 +71,14 @@ export default function App() {
               <ul>
                 {contacts.map((contact: ContactRecord) => (
                   <li key={contact.id}>
-                    <Link to={`contacts/${contact.id}`}>
-                      <ContactName contact={contact}/>
+                    <NavLink
+                      // load the data like pending
+                      className={({ isActive, isPending }) =>
+                        isActive ? "active" : isPending ? "pending" : ""
+                      }
+                      to={`contacts/${contact.id}`}
+                    >
+                      <ContactName contact={contact} />
                       {contact.favorite ? (
                         <span>
                           <span aria-label="Favorite" role="img">
@@ -75,7 +86,7 @@ export default function App() {
                           </span>
                         </span>
                       ) : null}
-                    </Link>
+                    </NavLink>
                   </li>
                 ))}
               </ul>
@@ -84,7 +95,10 @@ export default function App() {
             )}
           </nav>
         </div>
-        <div id="detail">
+        <div
+          className={navigation.state === "loading" ? "loading" : ""}
+          id="detail"
+        >
           <Outlet />
         </div>
         <ScrollRestoration />
